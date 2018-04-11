@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+     PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--  //여기는 매핑할 MemberMapper.java의 풀패키지명을 적어준다 -->
+<mapper namespace="com.test.mybatis.RailoMapper">
+	
+	<select id="admin_QAlistsearch" resultType="com.test.mybatis.Railo" parameterType="com.test.mybatis.Railo">
+   SELECT Q.QUES_NUM AS QUES_NUM,Q.QUES_TITLE AS QUES_TITLE,Q.QUES_CONT AS QUES_CONT,Q.NIC AS NIC
+             ,A.ANSER_CONT AS ANSER_CONT , A.ANSER_DATE AS ANSER_DATE
+   FROM TBL_QUES Q JOIN TBL_ANSER A
+          ON Q.QUES_NUM = A.QUES_NUM
+   WHERE A.QUES_NUM=#{ques_num}
+   </select>
+	
+	<select id="info_list" resultType="com.test.mybatis.Railo">
+		SELECT A.INFO_NUM AS INFO_NUM ,NVL(A.STATION_CODE,'선택 없음') AS STATION_CODE,A.INFO_TITLE AS INFO_TITLE ,A.COUNT as COUNT 
+	    ,NVL(C.STATION_NAME,'선택 없음') AS STATION_NAME 
+	      ,NVL(C.CITY_CODE,'선택 없음') AS CITY_CODE ,NVL(D.CITY_NAME,'선택 없음') AS CITY_NAME  ,A.INFO_CODE AS INFO_CODE ,A.IMAGE AS IMAGE
+	      ,B.INFO_NAME AS INFO_NAME ,A.INFO_CONT AS INFO_CONT ,A.COUNT AS COUNT 
+	      FROM TBL_INFO A , TBL_INFO_CODE B , TBL_STATION_CODE C , TBL_CITY_CODE D 
+	      WHERE A.INFO_CODE = B.INFO_CODE (+)
+	      AND A.STATION_CODE = C.STATION_CODE(+)
+	      AND C.CITY_CODE = D.CITY_CODE(+)
+	      ORDER BY TO_NUMBER(INFO_NUM) DESC
+	</select>
+	
+
+<select id="admin_login" resultType="int" parameterType="com.test.mybatis.Railo">
+      SELECT COUNT(*) AS COUNT
+      FROM TBL_ADMIN
+      WHERE ADMIN_ID=#{admin_id} AND ADMIN_PW=#{admin_pw}
+   </select>
+
+
+
+	<select id="ques_detail_search" resultType="com.test.mybatis.Railo" parameterType="com.test.mybatis.Railo">
+	SELECT Q.QUES_NUM AS QUES_NUM, Q.QUES_TITLE AS QUES_TITLE , Q.QUES_DATE AS QUES_DATE , Q.NIC AS NIC ,Q.QUES_CONT AS QUES_CONT, 
+		CASE WHEN NVL(A.QUES_NUM,0) = 0
+		   THEN '답변 없음'
+		   ELSE TO_CHAR(SUBSTR(A.ANSER_DATE,0,8))
+		   END AS ANSER
+		FROM TBL_QUES Q , TBL_ANSER A
+		WHERE Q.QUES_NUM = A.QUES_NUM(+)
+		AND Q.QUES_NUM=#{ques_num}
+	</select>
+
+<insert id="anser_insert" parameterType="com.test.mybatis.Railo">
+		INSERT INTO TBL_ANSER VALUES(#{ques_num},#{anser_cont},SYSDATE)
+	</insert>
+	
+	<select id="ques_data" resultType="com.test.mybatis.Railo">
+		SELECT Q.QUES_NUM AS QUES_NUM, Q.QUES_TITLE AS QUES_TITLE , Q.QUES_CONT AS QUES_CONT , Q.QUES_DATE AS QUES_DATE , Q.NIC AS NIC , 
+		NVL(A.ANSER_CONT,'답변 없음') AS ANSER_CONT 
+		FROM TBL_QUES Q , TBL_ANSER A
+		WHERE Q.QUES_NUM = A.QUES_NUM(+)
+    	AND Q.QUES_NUM = #{ques_num}
+	</select>
+	
+	<insert id="ques_insert" parameterType="com.test.mybatis.Railo">
+		INSERT INTO TBL_QUES(QUES_NUM,QUES_TITLE,QUES_CONT,QUES_DATE,NIC,ques_code)
+		VALUES (seq_ques.nextval,#{ques_title},#{ques_cont},sysdate,#{nic},#{ques_code})
+	</insert>
+	
+   <delete id="ques_delete" parameterType="com.test.mybatis.Railo">
+   	DELETE TBL_QUES
+   	WHERE QUES_NUM=#{ques_num}
+   </delete>
+	
+	<insert id="info_insert" parameterType="com.test.mybatis.Railo">
+		INSERT INTO TBL_INFO(INFO_NUM,STATION_CODE,INFO_CODE,INFO_CONT,INFO_TITLE,IMAGE)
+		VALUES(SEQ_INFO.NEXTVAL,#{station_code},#{info_code},#{info_cont},#{info_title},#{image})
+	</insert>
+	
+
+	
+	<select id="train_list" resultType="com.test.mybatis.Railo" parameterType="com.test.mybatis.Railo">
+		SELECT STATION_CODE , STATION_NAME
+		FROM TBL_STATION_CODE
+		WHERE CITY_CODE = #{city_code}
+		ORDER BY STATION_NAME
+	</select>
+	
+	<update id="info_update">
+	UPDATE TBL_INFO
+	SET
+	STATION_CODE = #{station_code}
+	,INFO_CODE = #{info_code}
+	,INFO_CONT = #{info_cont}
+	,INFO_TITLE = #{info_title}
+	WHERE INFO_NUM = #{info_num}
+	</update>
+	
+	<delete id="info_delete">
+		DELETE TBL_INFO
+      WHERE INFO_NUM=#{info_num}
+	</delete>
+	
+	
+	   <update id="anser_update" parameterType="com.test.mybatis.Railo">
+      UPDATE TBL_ANSER
+      SET ANSER_CONT=#{anser_cont}
+      WHERE QUES_NUM=#{ques_num}
+   </update>
+   <delete id="anser_delete" parameterType="com.test.mybatis.Railo">
+   	DELETE TBL_ANSER
+   	WHERE QUES_NUM=#{ques_num}
+   </delete>
+   
+   
+   <update id="info_count"  parameterType="com.test.mybatis.Railo">
+   UPDATE TBL_INFO
+	SET COUNT = COUNT+1
+	WHERE INFO_NUM =#{info_num}
+   </update>
+   
+   <select id="info_data" resultType="com.test.mybatis.Railo" parameterType="com.test.mybatis.Railo">
+SELECT A.INFO_NUM AS INFO_NUM ,NVL(A.STATION_CODE,'선택 없음') AS STATION_CODE,A.INFO_TITLE AS INFO_TITLE ,A.COUNT as COUNT 
+  ,NVL(C.STATION_NAME,'선택 없음') AS STATION_NAME 
+    ,NVL(C.CITY_CODE,'선택 없음') AS CITY_CODE ,NVL(D.CITY_NAME,'선택 없음') AS CITY_NAME  ,A.INFO_CODE AS INFO_CODE ,A.IMAGE AS IMAGE
+    ,B.INFO_NAME AS INFO_NAME ,A.INFO_CONT AS INFO_CONT ,A.COUNT AS COUNT 
+    FROM TBL_INFO A , TBL_INFO_CODE B , TBL_STATION_CODE C , TBL_CITY_CODE D 
+    WHERE A.INFO_CODE = B.INFO_CODE (+)
+    AND A.STATION_CODE = C.STATION_CODE(+)
+    AND C.CITY_CODE = D.CITY_CODE(+)
+    AND INFO_NUM = #{info_num}
+   </select>
+   
+   <select id="infogetlistnum" resultType="int" parameterType="com.test.mybatis.Criteria">
+      SELECT  COUNT(*)
+      FROM TBL_INFO A , TBL_INFO_CODE B , TBL_STATION_CODE C , TBL_CITY_CODE D 
+      WHERE A.INFO_CODE = B.INFO_CODE (+)
+      AND A.STATION_CODE = C.STATION_CODE(+)
+      AND C.CITY_CODE = D.CITY_CODE(+)
+      <include refid="info_search"/> 
+      ORDER BY TO_NUMBER(INFO_NUM)
+   </select>
+   
+   
+   
+    <select id="getlistnum" resultType="int" parameterType="com.test.mybatis.Criteria">
+         SELECT count(*)
+      FROM TBL_QUES 
+      <include refid="ques_search"/> 
+      ORDER BY TO_NUMBER(QUES_NUM) DESC
+   </select>
+   
+    <select id="ques_list2" resultType="com.test.mybatis.Railo" parameterType="com.test.mybatis.Criteria">
+      <![CDATA[
+      select X.rnum, X.*
+      from ( 
+          select rownum as rnum, A.*
+          from (
+             select *
+              from ]]>
+            QUESLIST
+             
+          <include refid="ques_search"/>
+           <![CDATA[
+       order by TO_NUMBER(QUES_NUM) desc) A 
+       where rownum <=#{pageEnd} ) X 
+       where X.rnum >= #{pageStart} 
+      ]]>
+   </select>
+   
+   <select id="info_list2" resultType="com.test.mybatis.Railo" parameterType="com.test.mybatis.Criteria">
+      <![CDATA[
+      select X.rnum, X.*
+      from ( 
+          select rownum as rnum, A.*
+          from (
+             select *
+              from ]]>
+            INFOLIST
+            where 1=1 
+          <include refid="info_search"/>
+           <![CDATA[
+       order by TO_NUMBER(INFO_NUM) desc) A 
+       where rownum <=#{pageEnd} ) X 
+       where X.rnum >= #{pageStart} 
+      ]]>
+   </select>
+   <sql id="ques_search">
+      <if test="searchType != null">
+         <if test="searchType == 1">where UPPER(nic) like UPPER('%'||#{keyword}||'%')</if>
+         <if test="searchType == 2">where UPPER(ques_title) like UPPER('%'||#{keyword}||'%')</if>
+      </if>
+   </sql>
+   
+    <sql id="info_search">
+      <if test="searchType != null">
+         <if test="searchType == 1">and UPPER(INFO_TITLE) LIKE UPPER('%'||#{keyword}||'%') </if>
+         <if test="searchType == 2">and UPPER(CITY_NAME) LIKE UPPER('%'||#{keyword}||'%') </if>
+         <if test="searchType == 3">and UPPER(INFO_NAME) LIKE UPPER('%'||#{keyword}||'%') </if>
+      </if>
+   </sql>
+
+</mapper>
